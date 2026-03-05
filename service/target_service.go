@@ -1,0 +1,43 @@
+package service
+
+import (
+	"fmt"
+	"ramadan-tracker-bts/models"
+	"ramadan-tracker-bts/repository"
+)
+
+type TargetService struct {
+	repo *repository.TargetMemoryRepository
+}
+
+func NewTargetService(repo *repository.TargetMemoryRepository) *TargetService {
+	return &TargetService{repo: repo}
+}
+
+func (s *TargetService) GetAll() ([]models.Target, error) {
+	return s.repo.FindAll()
+}
+
+func (s *TargetService) GetByID(id string) (*models.Target, error) {
+	return s.repo.FindByID(id)
+}
+
+func (s *TargetService) Create(t models.Target) error {
+	// Contoh validasi bisnis:
+	if t.Ibadah == "" {
+		return fmt.Errorf("ibadah tidak boleh kosong")
+	}
+	if t.Status == "" {
+		t.Status = "Proses" // Default status
+	}
+	s.repo.Create(t)
+	return nil
+}
+
+func (s *TargetService) Update(id string, t models.Target) error {
+	return s.repo.Update(id, t)
+}
+
+func (s *TargetService) Delete(id string) error {
+	return s.repo.Delete(id)
+}
