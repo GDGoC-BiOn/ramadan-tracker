@@ -1,0 +1,26 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'asia-southeast1-docker.pkg.dev/lab-islam/demo-bion/ramadan-tracker:${_TAG}', '.']
+
+# Push the container image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'asia-southeast1-docker.pkg.dev/lab-islam/demo-bion/ramadan-tracker:${_TAG}']
+
+# Deploy container image to Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - 'demo-bion'
+  - '--image'
+  - 'asia-southeast1-docker.pkg.dev/lab-islam/demo-bion/ramadan-tracker:${_TAG}'
+  - '--region'
+  - 'asia-southeast1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+  - '--set-env-vars=APP_ENV=production'
+
+substitutions:
+  _TAG: "latest"

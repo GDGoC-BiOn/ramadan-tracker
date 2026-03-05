@@ -1,10 +1,5 @@
-# Build stage — runs natively on the build machine for speed
-FROM --platform=$BUILDPLATFORM golang:1.25 AS builder
-
-# BuildKit automatically provides these ARGs for cross-compilation
-ARG TARGETOS
-ARG TARGETARCH
-ARG TARGETVARIANT
+# Build stage
+FROM golang:1.25 AS builder
 
 WORKDIR /app
 
@@ -14,9 +9,8 @@ RUN go mod download
 
 COPY . .
 
-# Cross-compile for the target platform with CGO disabled
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -a -installsuffix cgo -trimpath -o server main.go
+# Build for Linux
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -trimpath -o server main.go
 
 # Runtime stage — distroless nonroot is available for amd64 & arm64
 FROM gcr.io/distroless/static-debian12:nonroot
