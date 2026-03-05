@@ -1,23 +1,30 @@
-# Gunakan Golang 1.22 Alpine yang ukurannya sangat ringan
-FROM golang:1.22-alpine
+# Build stage — runs natively on the build machine for speed
+FROM --platform=$BUILDPLATFORM golang:1.25 AS builder
 
-# Set direktori kerja di dalam container
+# BuildKit automatically provides these ARGs for cross-compilation
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
+
 WORKDIR /app
 
-# Salin file go.mod dan go.sum terlebih dahulu untuk caching dependency
 COPY go.mod go.sum ./
 
-# Unduh package Go Fiber
 RUN go mod download
 
-# Salin sisa file kode (main.go)
 COPY . .
 
-# Build aplikasi menjadi binary bernama 'server'
-RUN go build -o server main.go
+# Cross-compile for the target platform with CGO disabled
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -a -installsuffix cgo -trimpath -o server main.go
 
-# Beritahu platform bahwa container menggunakan port ini
+# Runtime stage — distroless nonroot is available for amd64 & arm64
+FROM gcr.io/distroless/static-debian12:nonroot
+
+WORKDIR /app
+
+COPY --from=builder /app/server .
+
 EXPOSE 8080
 
-# Perintah untuk menjalankan aplikasi
-CMD ["/app/server"]
+CMD ["./server"]
